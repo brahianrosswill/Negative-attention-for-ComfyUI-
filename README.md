@@ -9,6 +9,10 @@ In order to do this for now the negative conditioning is sneaked to the attentio
 
 They are then split at the half before the cross attention.
 
+Like any model patcher, it is to be plugged right after the model loader:
+
+![image](https://github.com/user-attachments/assets/a27d9796-e563-4661-985e-4ee53c37ebb0)
+
 An example workflow is provided.
 
 ## Example:
