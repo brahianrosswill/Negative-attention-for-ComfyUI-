@@ -1,5 +1,5 @@
 # Negative-attention-for-ComfyUI-
-Takes the difference in between the positive and negative conditioning at the attention.
+Takes the difference in between the positive and negative conditioning at the cross attention.
 
 A proof of concept which demonstrates that a negative influence can be obtained by taking the difference at the output of the cross attention.
 
@@ -24,3 +24,12 @@ Strength at 2, rescale after ON:
 Strength at 2, rescale after OFF:
 
 ![example workflow](https://github.com/user-attachments/assets/e06fea9a-0d89-429a-8292-c432ae5efa05)
+
+
+## Note
+
+I haven't managed to make this work with anything but SDXL / SD1.5
+
+I did spend two hours looking for how to cross the equivalent of the cross attention for Flux but did not find how (like the keywords for the patch or something).
+
+Any help appreciated!
