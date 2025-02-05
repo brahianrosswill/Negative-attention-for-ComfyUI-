@@ -3,7 +3,7 @@ Takes the difference in between the positive and negative conditioning at the cr
 
 Only tested with SDXL and SD 1.X.
 
-Will not work with Flux (see bottom notes).
+Will not work with Flux (see bottom note).
 
 This allows to:
 
