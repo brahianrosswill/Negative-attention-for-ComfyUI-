@@ -7,7 +7,7 @@ In order to do this for now the negative conditioning is sneaked to the attentio
 
 ![image](https://github.com/user-attachments/assets/c43caf96-8f43-4c1c-8813-9a70a646f3cd)
 
-They are then split before the cross attention.
+They are then split at the half before the cross attention.
 
 An example workflow is provided.
 
