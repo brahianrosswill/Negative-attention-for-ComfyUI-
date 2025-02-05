@@ -5,7 +5,7 @@ This allows to:
 
 - Get a negative influence without generating a negative prediction
 - Let the unconditional prediction be unconditional
-- Or doubling down by having the same done for the negative prediction (overblow results are to be expected unless using an anti-burn or low CFG scale)
+- Or doubling down by having the same done for the negative prediction (overblown results are to be expected unless using an anti-burn or low CFG scale)
 
 A proof of concept.
 
