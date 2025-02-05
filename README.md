@@ -1,6 +1,10 @@
 # Negative-attention-for-ComfyUI-
 Takes the difference in between the positive and negative conditioning at the cross attention.
 
+Only tested with SDXL and SD 1.X.
+
+Will not work with Flux (see bottom notes).
+
 This allows to:
 
 - Get a negative influence without generating a negative prediction
