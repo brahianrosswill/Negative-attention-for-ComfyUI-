@@ -30,6 +30,6 @@ Strength at 2, rescale after OFF:
 
 I haven't managed to make this work with anything but SDXL / SD1.5
 
-I did spend two hours looking for how to cross the equivalent of the cross attention for Flux but did not find how (like the keywords for the patch or something).
+I did spend two hours looking for how to patch the equivalent of the cross attention for Flux but did not find how (like the keywords for the patch or something).
 
 Any help appreciated!
