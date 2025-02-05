@@ -1,7 +1,13 @@
 # Negative-attention-for-ComfyUI-
 Takes the difference in between the positive and negative conditioning at the cross attention.
 
-A proof of concept which demonstrates that a negative influence can be obtained by taking the difference at the output of the cross attention.
+This allows to:
+
+- Get a negative influence without generating a negative prediction
+- Let the unconditional prediction be unconditional
+- Or doubling down by having the same done for the negative prediction
+
+A proof of concept.
 
 In order to do this for now the negative conditioning is sneaked to the attention by being concatenated to the positive by using a special node.
 
