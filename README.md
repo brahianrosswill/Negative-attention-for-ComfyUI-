@@ -1,6 +1,8 @@
 # Negative-attention-for-ComfyUI-
 Takes the difference in between the positive and negative conditioning at the cross attention.
 
+This is an experiment.
+
 Only tested with SDXL and SD 1.X.
 
 Will not work with Flux (see bottom note).
@@ -10,8 +12,6 @@ This allows to:
 - Get a negative influence without generating a negative prediction
 - Let the unconditional prediction be unconditional
 - Or doubling down by having the same done for the negative prediction (overblown results are to be expected unless using an anti-burn or low CFG scale)
-
-A proof of concept.
 
 In order to do this for now the negative conditioning is sneaked to the attention by being concatenated to the positive by using a special node.
 
