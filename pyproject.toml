@@ -1,0 +1,14 @@
+[project]
+name = "negative-attention-for-comfyui-"
+description = "Takes the difference in between the positive and negative conditioning at the attention.\nNOTE: Will not work with Flux"
+version = "1.0.0"
+license = {file = "LICENSE"}
+
+[project.urls]
+Repository = "https://github.com/Extraltodeus/Negative-attention-for-ComfyUI-"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "Negative-attention-for-ComfyUI-"
+Icon = ""
