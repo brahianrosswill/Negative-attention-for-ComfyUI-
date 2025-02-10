@@ -35,7 +35,7 @@ Difference in positive and negative conditionings:
 
 ![example workflow png](https://github.com/user-attachments/assets/471f2b3f-53be-41aa-a940-5ee3eacb57d5)
 
-Difference in positive conditionings, negative conditioning empty:
+Difference in positive conditioning, negative conditioning empty:
 
 ![00023UI_00001_](https://github.com/user-attachments/assets/af14ad61-8640-42b8-82ef-143dded04f10)
 
