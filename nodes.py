@@ -2,11 +2,38 @@ from comfy.ldm.modules.attention import optimized_attention
 from comfy.model_management import interrupt_current_processing
 from copy import deepcopy
 import torch
+import math
+
+def scaled_dot_product_attention_with_negative(query, key, value, negative_key=None, negative_value=None, negative_strength=1, attn_mask=None, is_causal=False, scale=None, renorm=False) -> torch.Tensor:
+    L, S = query.size(-2), key.size(-2)
+    scale_factor = 1 / math.sqrt(query.size(-1)) if scale is None else scale
+    attn_bias = torch.zeros(L, S, dtype=query.dtype, device=query.device)
+    if is_causal:
+        assert attn_mask is None
+        temp_mask = torch.ones(L, S, dtype=torch.bool).tril(diagonal=0)
+        attn_bias.masked_fill_(temp_mask.logical_not(), float("-inf"))
+        attn_bias.to(query.dtype)
+
+    if attn_mask is not None:
+        if attn_mask.dtype == torch.bool:
+            attn_bias.masked_fill_(attn_mask.logical_not(), float("-inf")).to(query.device)
+        else:
+            attn_bias += attn_mask
+
+    attn_weight = query @ key.transpose(-2, -1) * scale_factor
+    negative_attn_weight = query @ negative_key.transpose(-2, -1) * scale_factor
+
+    diff_val = (torch.softmax(attn_weight+attn_bias, dim=-1) @ value) - (torch.softmax(negative_attn_weight+attn_bias, dim=-1) @ negative_value)
+    proj = torch.nn.Linear(diff_val.size(-1), S, bias=False, dtype=diff_val.dtype).to(diff_val.device)
+    diff = proj(diff_val)
+
+    attn_weight = (attn_weight + attn_bias + diff * negative_strength).softmax(dim=-1)
+
+    return attn_weight @ value
 
 class attention_patch():
-    def __init__(self, renorm, negative_strength):
+    def __init__(self, negative_strength):
         self.negative_strength = negative_strength
-        self.renorm = renorm
 
     def attention_with_negative(self, q, k, v, extra_options, mask=None, attn_precision=None):
         heads = extra_options if isinstance(extra_options, int) else extra_options['n_heads']
@@ -14,24 +41,22 @@ class attention_patch():
         if k.shape[-2] // 77 <= 1:
             return optimized_attention(q, k, v, heads, mask, attn_precision)
 
-        negative_k = k[:, k.size(-2)//2:,:]
-        negative_v = v[:, v.size(-2)//2:,:]
+        b, _, dim_head = q.shape
+        dim_head //= heads
+        q, k, v = map(
+            lambda t: t.view(b, -1, heads, dim_head).transpose(1, 2),
+            (q, k, v),
+        )
 
-        out_pos = optimized_attention(q, k[:,:k.size(-2)//2 ,:], v[:,:v.size(-2)//2 ,:],heads,mask,attn_precision)
+        negative_k = k[:,:, k.size(-2)//2:,:]
+        negative_v = v[:,:, k.size(-2)//2:,:]
 
-        if self.negative_strength == 0:
-            return out_pos
+        scale = 1 / math.sqrt(q.size(-1))
+        out = scaled_dot_product_attention_with_negative(q, k[:,:,:k.size(-2)//2 ,:], v[:,:,:v.size(-2)//2 ,:], negative_key=negative_k, negative_value=negative_v, negative_strength=self.negative_strength, attn_mask=mask, scale=scale)
 
-        out_neg = optimized_attention(q, negative_k, negative_v, heads, mask, attn_precision)
-
-        if self.renorm:
-            out_norm = out_pos.norm()
-
-        out = out_pos + (out_pos - out_neg) * self.negative_strength
-
-        if self.renorm:
-            out = out * out_norm / out.norm()
-
+        out = (
+            out.transpose(1, 2).reshape(b, -1, heads * dim_head)
+        )
         return out
 
 def nan_interrupt_patch(model):
@@ -50,8 +75,7 @@ class NegativeAttentionPatchNode:
     def INPUT_TYPES(s):
         return {"required": {
                     "model": ("MODEL",),
-                    "strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 100.0, "step": 1/10, "round":1/1000}),
-                    "rescale_after": ("BOOLEAN", {"default": False, "tooltip": "Ensures that the scale of the output is the same as before taking the difference.\nThis can fix over bright/dark results and help to raise the scale higher."}),
+                    "strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 100.0, "step": 1/4, "round":1/1000}),
                     }
                 }
 
@@ -62,14 +86,14 @@ class NegativeAttentionPatchNode:
 
     CATEGORY = "model_patches/negative attention"
 
-    def patch(self, model, strength, rescale_after):
+    def patch(self, model, strength):
         m = model.clone()
-        m = nan_interrupt_patch(m) # high scales can cause black images, let's not sample this.
+        m = nan_interrupt_patch(m)
 
         levels = ["input","middle","output"]
         layer_names = [[l, n, True] for l in levels for n in range(12)]
 
-        patch = attention_patch(negative_strength=strength, renorm=rescale_after)
+        patch = attention_patch(negative_strength=strength)
 
         for current_level, b_number, toggle in layer_names:
             m.set_model_attn2_replace(patch.attention_with_negative, current_level, b_number)
