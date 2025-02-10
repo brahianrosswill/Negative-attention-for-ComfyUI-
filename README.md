@@ -29,15 +29,20 @@ An example workflow is provided.
 
 No modification:
 
-![01310UI_00001_](https://github.com/user-attachments/assets/3927dd41-6c05-4f4f-92cb-50511755f6f0)
+![00022UI_00001_](https://github.com/user-attachments/assets/537999fd-a594-4eb9-ad60-28c4958172ea)
 
-Strength at 2, rescale after ON:
+Difference in positive and negative conditionings:
 
-![01309UI_00001_](https://github.com/user-attachments/assets/55badabe-b9e5-4cb5-a8df-93f0f320d6bb)
+![example workflow png](https://github.com/user-attachments/assets/471f2b3f-53be-41aa-a940-5ee3eacb57d5)
 
-Strength at 2, rescale after OFF:
+Difference in positive conditionings, negative conditioning empty:
 
-![example workflow](https://github.com/user-attachments/assets/e06fea9a-0d89-429a-8292-c432ae5efa05)
+![00023UI_00001_](https://github.com/user-attachments/assets/af14ad61-8640-42b8-82ef-143dded04f10)
+
+No modification using empty negative conditioning:
+
+![00025UI_00001_](https://github.com/user-attachments/assets/729bdeed-2dfe-4c87-923a-aa0eb5294e45)
+
 
 
 ## Note
