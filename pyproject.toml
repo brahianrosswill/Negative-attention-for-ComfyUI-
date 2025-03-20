@@ -9,6 +9,6 @@ Repository = "https://github.com/Extraltodeus/Negative-attention-for-ComfyUI-"
 #  Used by Comfy Registry https://comfyregistry.org
 
 [tool.comfy]
-PublisherId = ""
+PublisherId = "extraltodeus"
 DisplayName = "Negative-attention-for-ComfyUI-"
 Icon = ""
