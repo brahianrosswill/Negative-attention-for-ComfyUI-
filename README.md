@@ -22,6 +22,36 @@ This allows the model to:
 - Let the unconditional prediction be truly unconditional.
 - Or, optionally, doubling down by having the same "difference" logic applied to the negative prediction input of the sampler (overblown results are to be expected unless using an anti-burn technique or a low CFG scale).
 
+## How Negative Attention Interprets Negative Prompts
+
+The "Negative Attention" mechanism offers a more sophisticated way to utilize negative prompts compared to traditional methods. Instead of simply steering the model *away* from concepts in the negative prompt, it actively uses the negative prompt to refine and emphasize what is desired in the positive prompt.
+
+At its core, the technique focuses on the **difference** or **contrast** between what the positive prompt asks for and what the negative prompt describes. This difference is then used to guide the model.
+
+There are two primary ways this is applied in practice, corresponding to the examples provided:
+
+1.  **Direct Contrast (Primary Method):**
+    *   **Setup:** Both positive and negative prompt conditionings are combined by `ConcatSneakyConditioning` (e.g., `[positive_cond, negative_cond]`) and fed to the patched model via its positive conditioning input. The `NegativeAttentionPatchNode` then calculates `attention(positive_cond) - attention(negative_cond)` (scaled by `strength`).
+    *   **Effect on Negative Prompt:** The negative prompt directly influences how the positive prompt is interpreted. The model tries to generate an image that embodies the positive prompt *minus* the characteristics of the negative prompt. This can lead to more precise control, as the negative prompt carves out undesired features from the positive concept. For example, if the positive is "apple" and negative is "red", it steers towards non-red apples.
+    *   **Which follows better?** This method very directly "follows" the negative prompt by making its content subtractive from the positive prompt's content during the attention calculation. It's about defining the positive by what it *is not* (as specified by the negative).
+
+2.  **Positive Refinement with Separate Sampler-Level Negative:**
+    *   **Setup:** The `ConcatSneakyConditioning` node is configured to combine the positive conditioning with an *empty* conditioning (e.g., `[positive_cond, empty_cond]`) for the patched model. A separate, standard negative prompt is then fed to the *sampler's* negative input (e.g., via `negative_out="crop_to_77_tokens"` on `ConcatSneakyConditioning`).
+    *   **Effect on Negative Prompt:**
+        *   The patched model focuses on `attention(positive_cond) - attention(empty_cond)`. This essentially sharpens or clarifies the positive prompt against a neutral baseline.
+        *   The sampler then uses the standard negative prompt in the usual way for unconditional guidance (steering away from broad concepts in the negative prompt globally).
+    *   **Which follows better?** This method offers a two-pronged approach. The negative attention part refines the positive prompt in isolation, while the sampler's negative prompt handles broader exclusions. The "following" of the negative prompt is split: the specific negative prompt provided to the sampler is followed in the traditional sense (global avoidance), while the negative attention mechanism itself isn't using that specific negative prompt but rather an empty one to bolster the positive. This can be useful if you want to strongly define the positive concept first, then separately exclude general unwanted elements.
+
+**In summary:**
+
+The **Direct Contrast** method offers a more nuanced and integrated way of "following" the negative prompt by using its content to directly modulate and refine the positive prompt's attention characteristics. It's arguably a more powerful way to use the negative prompt for detailed control.
+
+The **Positive Refinement** method is less about the specific negative prompt directly interacting with the positive in the attention calculation, and more about sharpening the positive while relying on traditional sampler-level negative prompting for general exclusions.
+
+Choosing between them depends on the desired outcome:
+*   For fine-grained control where the negative prompt defines specific aspects to remove or contrast *within* the positive concept, the **Direct Contrast** method is generally more effective at "following" the negative prompt's detailed intent.
+*   If the goal is to have a strong positive focus while generally avoiding common undesirable elements, the **Positive Refinement** setup combined with a standard sampler negative prompt can be very effective, though the "negative attention" part itself isn't using the main negative prompt.
+
 ## Overview of Custom Nodes
 
 This project introduces two main custom nodes:
@@ -170,6 +200,7 @@ Prepares and concatenates positive and negative conditioning tensors. This node 
 *   **`concat_mode`**:
     *   **Type:** `STRING` (Dropdown menu)
     *   **Description:** Defines how to handle differences in length (number of tokens) between the `positive` and `negative` conditioning tensors before concatenation.
+    *   **Default:** `crop_to_shortest`
     *   **Options:**
         *   `crop_to_shortest`: Truncates the longer conditioning tensor to match the length of the shorter one.
         *   `prolongate_to_longest_by_loop`: Repeats the tokens of the shorter conditioning tensor until it matches the length of the longer one.
@@ -177,6 +208,7 @@ Prepares and concatenates positive and negative conditioning tensors. This node 
 *   **`negative_out`**:
     *   **Type:** `STRING` (Dropdown menu)
     *   **Description:** Defines the content of the second `Negative` output conditioning tensor.
+    *   **Default:** `empty_or_0`
     *   **Options:**
         *   `empty_or_0`: Outputs a tensor of zeros with the standard 77 token length (if `empty` input is not provided) or the `empty` conditioning input (also cropped/padded to 77 tokens). This is useful if you want the sampler's unconditional guidance to be neutral.
         *   `invert`: Outputs a tensor where the concatenated positive and negative conditionings (from the first output) are swapped. (The original positive becomes negative, and the original negative becomes positive).
